@@ -8,6 +8,7 @@ import com.nidhin.marketzen.response.AuthResponse;
 import com.nidhin.marketzen.services.CustomeUserDetailsService;
 import com.nidhin.marketzen.services.EmailService;
 import com.nidhin.marketzen.services.TwoFactorOtpService;
+import com.nidhin.marketzen.services.WatchlistService;
 import com.nidhin.marketzen.utils.OtpUtils;
 import io.jsonwebtoken.JwtParser;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +37,9 @@ public class AuthController {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private WatchlistService watchlistService;
+
     @PostMapping("/signup")
     public ResponseEntity<AuthResponse> register(@RequestBody User user) throws Exception {
 
@@ -48,6 +52,8 @@ public class AuthController {
         newUser.setPassword(user.getPassword());
         newUser.setFullName(user.getFullName());
         User saveUser = userRepository.save(newUser);
+        watchlistService.createWatchlist(saveUser);
+
         Authentication auth = new UsernamePasswordAuthenticationToken(
                 user.getEmail(),
                 user.getPassword()
@@ -89,7 +95,7 @@ public class AuthController {
                     otp,
                     jwt
             );
-emailService.sendVarificationOtpEmail(userName, otp);
+            emailService.sendVarificationOtpEmail(userName, otp);
 
             res.setSession(newTwoFactorOTP.getId());
             return new ResponseEntity<>(res, HttpStatus.ACCEPTED);
@@ -116,15 +122,14 @@ emailService.sendVarificationOtpEmail(userName, otp);
 
     @PostMapping("/two-factor/otp/{otp}")
     public ResponseEntity<AuthResponse> verifySignInOtp(@PathVariable String otp, @RequestParam String id) throws Exception {
-        TwoFactorOTP twoFactorOTP =twoFactorOtpService.findById(id);
-        if (twoFactorOtpService.varifyTwoFactorOtp(twoFactorOTP,otp)) {
+        TwoFactorOTP twoFactorOTP = twoFactorOtpService.findById(id);
+        if (twoFactorOtpService.varifyTwoFactorOtp(twoFactorOTP, otp)) {
             AuthResponse res = new AuthResponse();
             res.setMessage("Two Factor authentication verified");
             res.setTwoFactorAuthEnabled(true);
             res.setJwt(twoFactorOTP.getJwt());
             return new ResponseEntity<>(res, HttpStatus.OK);
-
         }
-       throw new Exception("invalid otp");
+        throw new Exception("invalid otp");
     }
 }

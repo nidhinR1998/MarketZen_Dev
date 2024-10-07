@@ -29,8 +29,8 @@ public class OrderController {
     @Autowired
     private CoinService coinService;
 
-    @Autowired
-    private WalletTransationService walletTransationService;
+ //   @Autowired
+ //   private WalletTransationService walletTransationService;
 
     @PostMapping("/pay")
     public ResponseEntity<Order> payOrderPayment(

@@ -2,10 +2,7 @@ package com.nidhin.marketzen.services;
 
 import com.nidhin.marketzen.domain.OrderStatus;
 import com.nidhin.marketzen.domain.OrderType;
-import com.nidhin.marketzen.models.Coin;
-import com.nidhin.marketzen.models.Order;
-import com.nidhin.marketzen.models.OrderItem;
-import com.nidhin.marketzen.models.User;
+import com.nidhin.marketzen.models.*;
 import com.nidhin.marketzen.repository.OrderItemRepository;
 import com.nidhin.marketzen.repository.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +26,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     private OrderItemRepository orderItemRepository;
+
+    @Autowired
+    private AssetService assetService;
 
     @Override
     public Order creatOrder(User user, OrderItem orderItem, OrderType orderType) {
@@ -81,7 +81,13 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(OrderStatus.SUCCESS);
         order.setOrderType(OrderType.BUY);
         Order savedOrder = orderRepository.save(order);
-       //Create Asset
+        //Create Asset
+        Asset oldAsset = assetService.findAssetByUserAndCoinId(order.getUser().getId(), order.getOrderItem().getCoin().getId());
+        if (oldAsset == null) {
+            assetService.createAsset(user, orderItem.getCoin(), orderItem.getQuantity());
+        } else {
+            assetService.updateAsset(oldAsset.getId(), quantity);
+        }
         return savedOrder;
     }
 
@@ -92,37 +98,43 @@ public class OrderServiceImpl implements OrderService {
         }
 
         double sellPrice = coin.getCurrentPrice();
-        double buyPrice = assetToSell.getPrice();
 
-        OrderItem orderItem = createOrderItem(coin, quantity, buyPrice, sellPrice);
+        Asset assetToSell = assetService.findAssetByUserAndCoinId(user.getId(), coin.getId());
+        double buyPrice = assetToSell.getBuyPrice();
+        if (assetToSell!= null) {
+            OrderItem orderItem = createOrderItem(coin, quantity, buyPrice, sellPrice);
 
         Order order = creatOrder(user, orderItem, OrderType.SELL);
 
         orderItem.setOrder(order);
+
         if (assetToSell.getQuantity() >= quantity) {
             order.setStatus(OrderStatus.SUCCESS);
             order.setOrderType(OrderType.SELL);
             Order savedOrder = orderRepository.save(order);
+
             walletService.payOrderPayment(order, user);
 
             Asset updatedAsset = assetService.updateAsset(assetToSell.getId(), -quantity);
             if (updatedAsset.getQuantity() * coin.getCurrentPrice() <= 1) {
-                assetService.deleteAsset(updatedAsset.getId);
+                assetService.delete(updatedAsset.getId());
             }
             return savedOrder;
         }
         throw new Exception("Insufficient quantity to sell");
+        }
+        throw new Exception("asset not found");
     }
 
     @Override
     @Transactional
     public Order processOrder(Coin coin, double quantity, OrderType orderType, User user) throws Exception {
 
-        if (orderType.equals(OrderType.BUY)){
-            return buyAsset(coin,quantity,user);
+        if (orderType.equals(OrderType.BUY)) {
+            return buyAsset(coin, quantity, user);
         } else if (orderType.equals(OrderType.SELL)) {
-            return sellAsset(coin,quantity,user);
-            
+            return sellAsset(coin, quantity, user);
+
         }
         throw new Exception("invalid order type");
     }
