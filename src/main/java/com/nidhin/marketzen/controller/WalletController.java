@@ -1,5 +1,6 @@
 package com.nidhin.marketzen.controller;
 
+import com.nidhin.marketzen.domain.WalletTransactionType;
 import com.nidhin.marketzen.models.*;
 import com.nidhin.marketzen.response.PaymentResponse;
 import com.nidhin.marketzen.services.*;
@@ -24,6 +25,9 @@ public class WalletController {
     @Autowired
     private PaymentService paymentService;
 
+    @Autowired
+    private TransactionService transactionService;
+
     @GetMapping("/api/wallet")
     public ResponseEntity<Wallet> getUserWallet(@RequestHeader("Authorization") String jwt) throws Exception {
         User user = userService.findUserProfileByJwt(jwt);
@@ -40,7 +44,18 @@ public class WalletController {
         User senderUser = userService.findUserProfileByJwt(jwt);
         Wallet receverWallet = walletService.findWalletById(walletId);
         Wallet wallet = walletService.walletToWalletTransfer(senderUser, receverWallet, req.getAmount());
-
+        WalletTransaction transactionType=new WalletTransaction();
+        WalletTransactionType type = WalletTransactionType.WALLET_TRANSFER;
+        transactionType.setType(type);
+        if (wallet!=null) {
+            WalletTransaction saveData= transactionService.createTransation(
+                    wallet,
+                    transactionType,
+                    walletId,
+                    req.getPurpose(),
+                    req.getAmount()
+            );
+        }
         return new ResponseEntity<>(wallet, HttpStatus.ACCEPTED);
     }
 
@@ -65,7 +80,7 @@ public class WalletController {
         Wallet wallet = walletService.getUserWallet(user);
         PaymentOrder order = paymentService.getPaymentOrderById(orderId);
         Boolean status = paymentService.proccedPaymentOrder(order, payment_id);
-        if (wallet.getBalance()==null){
+        if (wallet.getBalance() == null) {
             wallet.setBalance(BigDecimal.valueOf(0));
         }
         if (status) {

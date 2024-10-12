@@ -1,9 +1,11 @@
 package com.nidhin.marketzen.controller;
 
+import com.nidhin.marketzen.domain.WalletTransactionType;
 import com.nidhin.marketzen.models.User;
 import com.nidhin.marketzen.models.Wallet;
 import com.nidhin.marketzen.models.WalletTransaction;
 import com.nidhin.marketzen.models.Withdrawal;
+import com.nidhin.marketzen.services.TransactionService;
 import com.nidhin.marketzen.services.UserService;
 import com.nidhin.marketzen.services.WalletService;
 import com.nidhin.marketzen.services.WithdrawalService;
@@ -16,7 +18,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("api/withdrawal")
 public class WithdrawalController {
 
     @Autowired
@@ -28,6 +29,9 @@ public class WithdrawalController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private TransactionService walletTransactionService;
+
     @PostMapping("/api/withdrawal/{amount}")
     public ResponseEntity<?> withdrawalRequest(
             @PathVariable Long amount,
@@ -38,8 +42,15 @@ public class WithdrawalController {
 
         Withdrawal withdrawal=withdrawalService.requetWithdrawal(amount,user);
         walletService.addBalance(userWallet, -withdrawal.getAmount());
-
-       // WalletTransaction walletTransaction=walletTransationService.createTransaction();
+        WalletTransaction transactionType=new WalletTransaction();
+        WalletTransactionType type = WalletTransactionType.WITHDRAWAL;
+        transactionType.setType(type);
+        WalletTransaction walletTransaction=walletTransactionService.createTransation(
+                userWallet,
+                transactionType,null,
+                "bank account withdrawal",
+                withdrawal.getAmount()
+        );
 
         return  new ResponseEntity<>(withdrawal, HttpStatus.OK);
 

@@ -1,10 +1,7 @@
 package com.nidhin.marketzen.models;
 
 import com.nidhin.marketzen.domain.WalletTransactionType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -17,11 +14,14 @@ public class WalletTransaction {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
+    @ManyToOne
+    private Wallet wallet;
+
     private WalletTransactionType type;
 
     private LocalDate date;
 
-    private String transferId;
+    private Long transferId;
 
     private String purpose;
 
