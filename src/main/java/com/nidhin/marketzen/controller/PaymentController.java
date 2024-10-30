@@ -25,16 +25,16 @@ public class PaymentController {
 
     @PostMapping("/api/payment/{paymentMenthod}/amount/{amount}")
     public ResponseEntity<PaymentResponse> paymentHandler(
-            @PathVariable PaymentMethod paymentMethod,
+            @PathVariable PaymentMethod paymentMenthod,
             @PathVariable Long amount,
             @RequestHeader("Authorization") String jwt
             )throws  Exception, RazorpayException, StripeException {
         User user = userService.findUserProfileByJwt(jwt);
 
         PaymentResponse paymentResponse;
-        PaymentOrder order = paymentService.createOrder(user,amount,paymentMethod);
+        PaymentOrder order = paymentService.createOrder(user,amount,paymentMenthod);
 
-        if (paymentMethod.equals(PaymentMethod.RAZORPAY)){
+        if (paymentMenthod.equals(PaymentMethod.RAZORPAY)){
             paymentResponse=paymentService.createRazorpayPaymentLing(user,amount,order.getId());
         } else {
             paymentResponse=paymentService.createStripePaymentLing(user,amount,order.getId());

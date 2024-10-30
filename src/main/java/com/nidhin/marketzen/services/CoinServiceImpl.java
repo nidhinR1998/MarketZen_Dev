@@ -37,10 +37,11 @@ public class CoinServiceImpl implements CoinService{
 
     @Override
     public List<Coin> getCoinList(int page) throws Exception {
-        String url="https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&per_page=10&page="+page;
+        String url="https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&per_page=10&page="+page+"?x_cg_demo_api_key="+API_KEY;
         RestTemplate restTemplate =new RestTemplate();
         try {
             HttpHeaders headers = new HttpHeaders();
+            headers.set("x_cg_demo_api_key", API_KEY);
             HttpEntity<String> entity=new HttpEntity<String>("parameters", headers);
             ResponseEntity<String> response =restTemplate.exchange(url, HttpMethod.GET,entity,String.class);
             List<Coin> coinList=objectMapper.readValue(response.getBody(),
@@ -54,10 +55,11 @@ public class CoinServiceImpl implements CoinService{
 
     @Override
     public String getMarketChart(String coinId, int days) throws Exception {
-        String url="https://api.coingecko.com/api/v3/coins/"+coinId+"/market_chart?vs_currency=usd&days="+days;
+        String url="https://api.coingecko.com/api/v3/coins/"+coinId+"/market_chart?vs_currency=usd&days="+days+"?x_cg_demo_api_key="+API_KEY;
         RestTemplate restTemplate =new RestTemplate();
         try {
             HttpHeaders headers = new HttpHeaders();
+            //headers.set("x_cg_demo_api_key", API_KEY);
             HttpEntity<String> entity=new HttpEntity<String>("parameters", headers);
             ResponseEntity<String> response =restTemplate.exchange(url, HttpMethod.GET,entity,String.class);
            return response.getBody();
@@ -68,14 +70,15 @@ public class CoinServiceImpl implements CoinService{
 
     @Override
     public String getCoinDetails(String coinId) throws Exception {
-        String url="https://api.coingecko.com/api/v3/coins/"+coinId;
+       // String url="https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids="+coinId+"&x_cg_demo_api_key="+API_KEY;
+        String url1="https://api.coingecko.com/api/v3/coins/"+coinId+"?x_cg_demo_api_key="+API_KEY;
         RestTemplate restTemplate =new RestTemplate();
         try {
             HttpHeaders headers = new HttpHeaders();
+           // headers.set("x_cg_demo_api_key", API_KEY);
             HttpEntity<String> entity=new HttpEntity<String>("parameters", headers);
-            ResponseEntity<String> response =restTemplate.exchange(url, HttpMethod.GET,entity,String.class);
+            ResponseEntity<String> response =restTemplate.exchange(url1, HttpMethod.GET,entity,String.class);
             JsonNode jsonNode = objectMapper.readTree(response.getBody());
-
             Coin coin = new Coin();
             coin.setId(jsonNode.get("id").asText());
             coin.setName(jsonNode.get("name").asText());
@@ -111,10 +114,11 @@ public class CoinServiceImpl implements CoinService{
 
     @Override
     public String searchCoin(String keyword) throws Exception {
-        String url="https://api.coingecko.com/api/v3/search?query="+keyword;
+        String url="https://api.coingecko.com/api/v3/search?query="+keyword+"?x_cg_demo_api_key="+API_KEY;
         RestTemplate restTemplate =new RestTemplate();
         try {
             HttpHeaders headers = new HttpHeaders();
+            headers.set("x_cg_demo_api_key", API_KEY);
             HttpEntity<String> entity=new HttpEntity<String>("parameters", headers);
             ResponseEntity<String> response =restTemplate.exchange(url, HttpMethod.GET,entity,String.class);
             return response.getBody();
@@ -125,7 +129,7 @@ public class CoinServiceImpl implements CoinService{
 
     @Override
     public String getTop50CoinsByMarketCapRank() throws Exception {
-        String url="https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&per_page=50&page=1";
+        String url="https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&per_page=50&page=1?x_cg_demo_api_key="+API_KEY;
         RestTemplate restTemplate =new RestTemplate();
         try {
             HttpHeaders headers = new HttpHeaders();
@@ -139,7 +143,7 @@ public class CoinServiceImpl implements CoinService{
 
     @Override
     public String getTreadingCoins() throws Exception {
-        String url="https://api.coingecko.com/api/v3/search/trending";  //4:37:19
+        String url="https://api.coingecko.com/api/v3/search/trending?x_cg_demo_api_key="+API_KEY;
         RestTemplate restTemplate =new RestTemplate();
         try {
             HttpHeaders headers = new HttpHeaders();

@@ -26,7 +26,7 @@ public class TransactionController {
     @Autowired
     private TransactionService transactionService;
 
-    @GetMapping("/api/transaction")
+    @GetMapping("/api/wallet/transactions")
     public ResponseEntity<List<WalletTransaction>> getUserWaller(
             @RequestHeader("Authorization") String jwt
     ) throws Exception {
