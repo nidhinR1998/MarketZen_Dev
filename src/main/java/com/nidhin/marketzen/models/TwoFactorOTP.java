@@ -21,4 +21,7 @@ public class TwoFactorOTP {
 
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String jwt;
+
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private String message;
 }

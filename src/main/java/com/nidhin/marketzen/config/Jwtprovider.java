@@ -21,7 +21,7 @@ public class Jwtprovider {
         String roles = popularAuthorities(authorities);
         String jwt = Jwts.builder()
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(new Date().getTime() + 86400000))
+                .setExpiration(new Date(new Date().getTime() + 3600000))
                 .claim("email", auth.getName())
                 .claim("authorities", roles)
                 .signWith(key)
@@ -37,12 +37,33 @@ public class Jwtprovider {
         return email;
     }
 
+
+    public static String getChangePassowrdEamilFromToken(String token) {
+        Claims claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
+        String email = String.valueOf(claims.get("email"));
+        return email;
+    }
+
+
     private static String popularAuthorities(Collection<? extends GrantedAuthority> authorities) {
         Set<String> auth = new HashSet<>();
         for (GrantedAuthority ga : authorities) {
             auth.add(ga.getAuthority());
         }
         return String.join(",", auth);
+    }
+
+    // New method for generating a forgot password token
+    public static String generateForgotPasswordToken(String email) {
+        // Set expiration to 5 minutes
+        Date expiryDate = new Date(new Date().getTime() + 5 * 60 * 1000);
+
+        return Jwts.builder()
+                .setIssuedAt(new Date())
+                .setExpiration(expiryDate)
+                .claim("email", email)
+                .signWith(key)
+                .compact();
     }
 
 }

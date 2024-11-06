@@ -5,7 +5,7 @@ import com.nidhin.marketzen.models.User;
 
 public interface TwoFactorOtpService {
 
-    TwoFactorOTP createTwoFactorOtp(User user, String otp, String jwt);
+    TwoFactorOTP createTwoFactorOtp(User user, String otp, String jwt, String message);
 
     TwoFactorOTP findByUser(long userId);
 
