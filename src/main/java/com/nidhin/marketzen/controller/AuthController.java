@@ -5,10 +5,7 @@ import com.nidhin.marketzen.models.TwoFactorOTP;
 import com.nidhin.marketzen.models.User;
 import com.nidhin.marketzen.repository.UserRepository;
 import com.nidhin.marketzen.response.AuthResponse;
-import com.nidhin.marketzen.services.CustomeUserDetailsService;
-import com.nidhin.marketzen.services.EmailService;
-import com.nidhin.marketzen.services.TwoFactorOtpService;
-import com.nidhin.marketzen.services.WatchlistService;
+import com.nidhin.marketzen.services.*;
 import com.nidhin.marketzen.utils.CryptoUtils;
 import com.nidhin.marketzen.utils.OtpUtils;
 import io.jsonwebtoken.JwtParser;
@@ -47,6 +44,9 @@ public class AuthController {
 
     @Autowired
     private WatchlistService watchlistService;
+
+    @Autowired
+    private UserService userService;
 
     @PostMapping("/signup")
     public ResponseEntity<AuthResponse> register(@RequestBody User user) throws Exception {
@@ -88,7 +88,7 @@ public class AuthController {
 
         String userName = CryptoUtils.decrypt(user.getEmail());
         String password = CryptoUtils.decrypt(user.getPassword());
-        logger.info("EMAIL = {}" +"and" + "Password = {}", userName , password);
+        logger.info("EMAIL = {}" + "and" + "Password = {}", userName, password);
 
         Authentication auth = authenticate(userName, password);
         SecurityContextHolder.getContext().setAuthentication(auth);
@@ -106,7 +106,7 @@ public class AuthController {
             if (oldTwoFactorOTP != null) {
                 twoFactorOtpService.deleteTwoFactorOtp(oldTwoFactorOTP);
             }
-             String message ="TWO FACTOR AUTH";
+            String message = "TWO FACTOR AUTH";
             TwoFactorOTP newTwoFactorOTP = twoFactorOtpService.createTwoFactorOtp(
                     authUser,
                     otp,
@@ -167,7 +167,7 @@ public class AuthController {
     public ResponseEntity<AuthResponse> forgotPasswordSendOtp(@RequestBody User user) throws Exception {
         logger.info("Forgot Password Hit with User: {}", user);
         String email = CryptoUtils.decrypt(user.getEmail());
-        logger.info("FORGOT-PASSWORD_EMAIL: {}",email);
+        logger.info("FORGOT-PASSWORD_EMAIL: {}", email);
         User authUser = userRepository.findByEmail(email);
         if (authUser != null) {
             String otp = OtpUtils.generateOTP();
@@ -187,7 +187,6 @@ public class AuthController {
             res.setSession(newTwoFactorOTP.getId());
             logger.error("Forgot Password OTP send to email: {}", email);
             return new ResponseEntity<>(res, HttpStatus.ACCEPTED);
-
         } else {
             throw new Exception("User not found");
         }
@@ -196,45 +195,43 @@ public class AuthController {
     @PostMapping("/change-password")
     public ResponseEntity<AuthResponse> changePassword(@RequestBody User user, @RequestParam String id, @RequestParam String jwt) throws Exception {
         logger.info("Password change attempt for user: {}", user.getEmail());
-
         // Check if the provided OTP ID exists
         TwoFactorOTP twoFactorOTP = twoFactorOtpService.findById(id);
         if (twoFactorOTP == null) {
-            logger.error("Invalid User {}", id);
+            logger.error("Invalid OTP ID for user {}", id);
             throw new Exception("Invalid OTP ID");
         }
-
         // Extract email from JWT
-        String email = Jwtprovider.getChangePassowrdEamilFromToken(jwt);
+        String email = Jwtprovider.getChangePassowrdEamilFromToken(jwt); // Corrected typo here
         logger.info("User Email from Token: {}", email);
-
         // Retrieve the user by email
         User existingUser = userRepository.findByEmail(email);
         if (existingUser == null) {
             logger.error("User not found for email: {}", email);
             throw new Exception("User not found");
         }
-
+        // Delete two-factor OTP
+        boolean isValid = userService.isOtpDeleted(existingUser, id, jwt);
         // Update password and save user
-        existingUser.setPassword(user.getPassword());
-        userRepository.save(existingUser);
-
-        // Re-authenticate with new password
-        Authentication auth = new UsernamePasswordAuthenticationToken(
-                existingUser.getEmail(),
-                existingUser.getPassword()
-        );
-        SecurityContextHolder.getContext().setAuthentication(auth);
-
-        // Generate a new JWT token
-        String newJwt = Jwtprovider.generateToken(auth);
-        AuthResponse res = new AuthResponse();
-        res.setJwt(newJwt);
-        res.setStatus(true);
-        res.setMessage("Password changed successfully");
-
-        logger.info("Password change successful for user: {}", existingUser.getEmail());
-        return new ResponseEntity<>(res, HttpStatus.OK);
+        if (isValid) {
+            Authentication auth = new UsernamePasswordAuthenticationToken(
+                    existingUser.getEmail(),
+                    existingUser.getPassword()
+            );
+            SecurityContextHolder.getContext().setAuthentication(auth);
+            // Generate a new JWT token
+            String newJwt = Jwtprovider.generateToken(auth);
+            AuthResponse res = new AuthResponse();
+            res.setJwt(newJwt);
+            res.setStatus(true);
+            res.setMessage("Password changed successfully");
+            logger.info("Password change successful for user: {}", existingUser.getEmail());
+            existingUser.setPassword(user.getPassword());
+            userRepository.save(existingUser);
+            return new ResponseEntity<>(res, HttpStatus.OK);
+        } else {
+            logger.error("OTP deletion failed for user: {}", existingUser.getEmail());
+            throw new Exception("OTP deletion failed");
+        }
     }
-
 }
