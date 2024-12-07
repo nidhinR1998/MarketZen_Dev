@@ -11,6 +11,7 @@ import com.nidhin.marketzen.models.Coin;
 import com.nidhin.marketzen.models.CoinDTO;
 import com.nidhin.marketzen.services.CoinService;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,7 +19,9 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+
 
 @Service
 public class ChatbotServiceImpl implements ChatbotService {
@@ -34,9 +37,128 @@ public class ChatbotServiceImpl implements ChatbotService {
     @Autowired
     private CoinService coinService;
 
+    @Override
+    public ApiResponse getCoinDetails(String prompt) throws Exception {
+        ApiResponse response = new ApiResponse();
+        try {
+            // Step 1: Fetch function response
+            FunctionResponse res = getFunctionResponse(prompt);
+
+            // Step 2: Fetch API response for currency
+            CoinDTO apiResponse = makeApiRequest(res.getCurrencyName());
+
+            // Step 3: Prepare Gemini API URL and headers
+            String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" + GEMINI_API_KEY;
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            // Step 4: Create JSON body
+            String body = createRequestBody(prompt, res, apiResponse);
+
+            // Step 5: Make API call to Gemini
+            String responseBody = callGeminiAPI(GEMINI_API_URL, headers, body);
+
+            // Step 6: Parse response
+            String text = parseResponse(responseBody);
+
+            // Step 7: Set success message
+            response.setMessage(text);
+        } catch (Exception e) {
+            // Handle any exception that occurs and set error message
+            response.setMessage("Failed to fetch coin details: " + e.getMessage());
+        }
+        return response;
+    }
+
+    private String createRequestBody(String prompt, FunctionResponse res, CoinDTO apiResponse) throws JSONException {
+        return new JSONObject()
+                .put("contents", new JSONArray()
+                        .put(new JSONObject()
+                                .put("role", "user")
+                                .put("parts", new JSONArray()
+                                        .put(new JSONObject()
+                                                .put("text", prompt)
+                                        )
+                                )
+                        )
+                        .put(new JSONObject()
+                                .put("role", "model")
+                                .put("parts", new JSONArray()
+                                        .put(new JSONObject()
+                                                .put("functionCall", new JSONObject()
+                                                        .put("name", res.getFunctionName())
+                                                        .put("args", new JSONObject()
+                                                                .put("currencyName", res.getCurrencyName())
+                                                                .put("currencyData", res.getCurrencyData())
+                                                        )
+                                                )
+                                        )
+                                )
+                        )
+                        .put(new JSONObject()
+                                .put("role", "function")
+                                .put("parts", new JSONArray()
+                                        .put(new JSONObject()
+                                                .put("functionResponse", new JSONObject()
+                                                        .put("name", res.getFunctionName())
+                                                        .put("response", new JSONObject()
+                                                                .put("name", res.getFunctionName())
+                                                                .put("content", apiResponse)
+                                                        )
+                                                )
+                                        )
+                                )
+                        )
+                )
+                .put("tools", new JSONArray()
+                        .put(new JSONObject()
+                                .put("functionDeclarations", new JSONArray()
+                                        .put(new JSONObject()
+                                                .put("name", res.getFunctionName())
+                                                .put("description", "Get crypto data from given currency object.")
+                                                .put("parameters", new JSONObject()
+                                                        .put("type", "OBJECT")
+                                                        .put("properties", new JSONObject()
+                                                                .put("currencyName", new JSONObject()
+                                                                        .put("type", "STRING")
+                                                                        .put("description", "The currency Name, id, symbol.")
+                                                                )
+                                                                .put("currencyData", new JSONObject()
+                                                                        .put("type", "STRING")
+                                                                        .put("description", "The currency data including id, symbol, current price, image, market cap, etc.")
+                                                                )
+                                                        )
+                                                        .put("required", new JSONArray()
+                                                                .put("currencyName")
+                                                                .put("currencyData")
+                                                        )
+                                                )
+                                        )
+                                )
+                        )
+                )
+                .toString();
+    }
+
+    private String callGeminiAPI(String url, HttpHeaders headers, String body) throws RestClientException {
+        HttpEntity<String> request = new HttpEntity<>(body, headers);
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+        System.out.println("AI_Request -----------> " + request);
+        System.out.println("Response -----------> " + response.getBody());
+        return response.getBody();
+    }
+
+    private String parseResponse(String responseBody) throws Exception {
+        ReadContext ctx = JsonPath.parse(responseBody);
+        return ctx.read("$.candidates[0].content.parts[0].text");
+    }
+
+
     // Method to make an API request and fetch coin details as a JSON string
     public CoinDTO makeApiRequest(String currencyName) throws Exception {
-        String url1 = "https://api.coingecko.com/api/v3/coins/" + currencyName + "?x_cg_demo_api_key=" + API_KEY;
+        String coinName = currencyName.toLowerCase();
+        String url1 = "https://api.coingecko.com/api/v3/coins/" + coinName + "?x_cg_demo_api_key=" + API_KEY;
         RestTemplate restTemplate = new RestTemplate();
         CoinDTO coinDTO = new CoinDTO();
         try {
@@ -91,7 +213,7 @@ public class ChatbotServiceImpl implements ChatbotService {
         return coinDTO;
     }
 
-    @Override
+  //  @Override
     public FunctionResponse getFunctionResponse(String prompt) {
         String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" + GEMINI_API_KEY;
 
@@ -216,110 +338,6 @@ public class ChatbotServiceImpl implements ChatbotService {
 
     }
 
-
-    @Override
-    public ApiResponse getCoinDetails(String prompt) throws Exception {
-        ApiResponse response = new ApiResponse();
-        try {
-            // Fetch coin details as JSON string
-            CoinDTO apiResponse = makeApiRequest(prompt);
-            FunctionResponse res = getFunctionResponse(prompt);
-            String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" + GEMINI_API_KEY;
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-
-            // Create JSON body using method chaining
-            String body = new JSONObject()
-                    .put("contents", new JSONArray()
-                            .put(new JSONObject()
-                                    .put("role", "user")
-                                    .put("parts", new JSONArray()
-                                            .put(new JSONObject()
-                                                    .put("text", prompt)
-                                            )
-                                    )
-                            )
-                            .put(new JSONObject()
-                                    .put("role", "model")
-                                    .put("parts", new JSONArray()
-                                            .put(new JSONObject()
-                                                    .put("functionCall", new JSONObject()
-                                                            .put("name", "getCoinDetails")
-                                                            .put("args", new JSONObject()
-                                                                    .put("currencyName", res.getCurrencyName())
-                                                                    .put("currencyData", res.getCurrencyData())
-                                                            )
-                                                    )
-                                            )
-                                    )
-                            )
-                            .put(new JSONObject()
-                                    .put("role", "function")
-                                    .put("parts", new JSONArray()
-                                            .put(new JSONObject()
-                                                    .put("functionResponse", new JSONObject()
-                                                            .put("name", "getCoinDetails")
-                                                            .put("response", new JSONObject()
-                                                                    .put("name", "getCoinDetails")
-                                                                    .put("content", apiResponse)
-                                                            )
-                                                    )
-                                            )
-                                    )
-                            )
-                    )
-                    .put("tools", new JSONArray()
-                            .put(new JSONObject()
-                                    .put("functionDeclartions", new JSONArray()
-                                            .put(new JSONObject()
-                                                    .put("name", "getCoinDetails")
-                                                    .put("description", "Get crypto data from given currency object.")
-                                                    .put("parameters", new JSONObject()
-                                                            .put("type", "OBJECT")
-                                                            .put("properties", new JSONObject()
-                                                                    .put("currencyName", new JSONObject()
-                                                                            .put("type", "STRING")
-                                                                            .put("description",
-                                                                                    "The currency Name, " +
-                                                                                            "id, " +
-                                                                                            "symbol.")
-                                                                    )
-                                                                    .put("currencyData", new JSONObject()
-                                                                            .put("type", "STRING")
-                                                                            .put("description",
-                                                                                    "The currency data id, " +
-                                                                                            "symbol, current price," +
-                                                                                            "image," +
-                                                                                            "market cap extra...")
-                                                                    )
-                                                            )
-                                                            .put("required", new JSONArray()
-                                                                    .put("currencyName")
-                                                                    .put("currencyData")
-                                                            )
-                                                    )
-                                            )
-                                    )
-                            )
-                    )
-                    .toString();
-            HttpEntity<String> request = new HttpEntity<>(headers);
-            RestTemplate restTemplate = new RestTemplate();
-            ResponseEntity<String> response1 = restTemplate.postForEntity(GEMINI_API_URL, request, String.class);
-            String responseBody = response1.getBody();
-            System.out.println("Response -----------> " + responseBody);
-            ReadContext ctx = JsonPath.parse(response1.getBody());
-            String text = ctx.read("$.candidates[0].content.parts[0].text");
-            //  ApiResponse ans = new ApiResponse();
-            response.setMessage(text);
-            return response;
-        } catch (Exception e) {
-            // Return an error ApiResponse in case of failure
-            response.setMessage("Failed to fetch coin details: " + e.getMessage());
-            return response;
-        }
-    }
 
     // Utility method to parse JSON string to a Coin object
     private Coin parseJsonToCoin(String json) throws Exception {

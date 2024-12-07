@@ -25,13 +25,13 @@ public class ChatbotController {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @PostMapping("/getData")
+    @PostMapping("/getCoin")
     public ResponseEntity<CoinDTO> getData(@RequestBody PromptBody promptBody) throws Exception {
         CoinDTO response = chatbotService.makeApiRequest(promptBody.getPrompt());
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @PostMapping("/getData2")
+    @PostMapping("/getData")
     public ResponseEntity<ApiResponse>getCoinDetails(@RequestBody PromptBody promptBody) throws Exception {
         ApiResponse response = chatbotService.getCoinDetails(promptBody.getPrompt());
         return new ResponseEntity<>(response, HttpStatus.OK);
