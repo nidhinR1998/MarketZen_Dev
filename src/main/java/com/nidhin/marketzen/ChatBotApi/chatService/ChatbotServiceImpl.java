@@ -125,7 +125,7 @@ public class ChatbotServiceImpl implements ChatbotService {
                                                                 )
                                                                 .put("currencyData", new JSONObject()
                                                                         .put("type", "STRING")
-                                                                        .put("description", "The currency data including id, symbol, current price, image, market cap, etc.")
+                                                                        .put("description", "The currency data including id, symbol, current price, image, market cap rank, market cap, etc.")
                                                                 )
                                                         )
                                                         .put("required", new JSONArray()
@@ -213,7 +213,7 @@ public class ChatbotServiceImpl implements ChatbotService {
         return coinDTO;
     }
 
-  //  @Override
+    @Override
     public FunctionResponse getFunctionResponse(String prompt) {
         String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" + GEMINI_API_KEY;
 
