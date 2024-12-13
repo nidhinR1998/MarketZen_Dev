@@ -43,31 +43,101 @@ public class ChatbotServiceImpl implements ChatbotService {
         try {
             // Step 1: Fetch function response
             FunctionResponse res = getFunctionResponse(prompt);
+            CoinDTO apiResponse = new CoinDTO();
+            if (res.getFunctionName().equals("getCoinDetails")) {
+                // Step 2: Fetch API Coin response for currency
+                apiResponse = makeApiRequest(res.getCurrencyName());
 
-            // Step 2: Fetch API response for currency
-            CoinDTO apiResponse = makeApiRequest(res.getCurrencyName());
+                // Step 3: Prepare Gemini API URL and headers
+                String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" + GEMINI_API_KEY;
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
 
-            // Step 3: Prepare Gemini API URL and headers
-            String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" + GEMINI_API_KEY;
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
+                // Step 4: Create JSON body
+                String body = createRequestBody(prompt, res, apiResponse);
 
-            // Step 4: Create JSON body
-            String body = createRequestBody(prompt, res, apiResponse);
+                // Step 5: Make API call to Gemini
+                String responseBody = callGeminiAPI(GEMINI_API_URL, headers, body);
 
-            // Step 5: Make API call to Gemini
-            String responseBody = callGeminiAPI(GEMINI_API_URL, headers, body);
+                // Step 6: Parse response
+                String text = parseResponse(responseBody);
 
-            // Step 6: Parse response
-            String text = parseResponse(responseBody);
+                // Step 7: Set success message
+                response.setMessage(text);
 
-            // Step 7: Set success message
-            response.setMessage(text);
+                return response;
+
+            } /*else {
+                String response_chat=simpleChat(prompt);
+                System.out.println("Raw Response: " + response_chat);
+                response.setMessage(response_chat);
+                return response;
+            }*/
+
+            else {
+                String responseChat = simpleChat(prompt);
+
+                try {
+                    // Parse the response JSON
+                    JSONObject responseJson = new JSONObject(responseChat);
+
+                    // Extract the "candidates" array
+                    if (!responseJson.has("candidates")) {
+                        response.setMessage("Missing 'candidates' in response.");
+                        return response;
+                    }
+                    JSONArray candidates = responseJson.getJSONArray("candidates");
+
+                    if (candidates.length() == 0) {
+                        response.setMessage("No candidates found in response.");
+                        return response;
+                    }
+
+                    // Extract the first candidate's "content"
+                    JSONObject firstCandidate = candidates.getJSONObject(0);
+                    if (!firstCandidate.has("content")) {
+                        response.setMessage("Missing 'content' in first candidate.");
+                        return response;
+                    }
+                    JSONObject content = firstCandidate.getJSONObject("content");
+
+                    // Extract the "parts" array
+                    if (!content.has("parts")) {
+                        response.setMessage("Missing 'parts' in content.");
+                        return response;
+                    }
+                    JSONArray parts = content.getJSONArray("parts");
+
+                    if (parts.length() == 0) {
+                        response.setMessage("No parts found in content.");
+                        return response;
+                    }
+
+                    // Extract the "text" field from the first part
+                    JSONObject firstPart = parts.getJSONObject(0);
+                    if (!firstPart.has("text")) {
+                        response.setMessage("Missing 'text' in parts.");
+                        return response;
+                    }
+                    String extractedText = firstPart.getString("text");
+
+                    // Set the extracted text as the response message
+                    response.setMessage(extractedText);
+                    return response;
+
+                } catch (JSONException e) {
+                    response.setMessage("JSON parsing error: " + e.getMessage());
+                    return response;
+                }
+            }
+
+
         } catch (Exception e) {
             // Handle any exception that occurs and set error message
             response.setMessage("Failed to fetch coin details: " + e.getMessage());
+            return response;
         }
-        return response;
+
     }
 
     private String createRequestBody(String prompt, FunctionResponse res, CoinDTO apiResponse) throws JSONException {
@@ -278,8 +348,24 @@ public class ChatbotServiceImpl implements ChatbotService {
                                                         )
                                                 )
                                         )
-                                )
-                        )
+                                        .put(new JSONObject()
+                                                .put("name", "simpleChat")
+                                                .put("description", "Process the given text and return a result")
+                                                .put("parameters", new JSONObject()
+                                                        .put("type", "OBJECT")
+                                                        .put("properties", new JSONObject()
+                                                                .put("text", new JSONObject()
+                                                                        .put("type", "STRING")
+                                                                        .put("description", "The text to process.")
+                                                                )
+                                                        )
+                                                        .put("required", new JSONArray()
+                                                                .put("text")
+                                                        )
+                                                )
+
+                                        )
+                                ))
                 );
         //Create HTTP headers
         HttpHeaders headers = new HttpHeaders();
@@ -290,23 +376,11 @@ public class ChatbotServiceImpl implements ChatbotService {
 
         //Make the POST request
         RestTemplate restTemplate = new RestTemplate();
+        System.out.println("=------------------ " + requestEntity);
         ResponseEntity<String> response = restTemplate.postForEntity(GEMINI_API_URL, requestEntity, String.class);
 
         String responseBody = response.getBody();
         System.out.println("=------------------ " + responseBody);
-
-//        ReadContext ctx = JsonPath.parse(responseBody);
-//
-//        //Extract specific values
-//        String currencyName = ctx.read("$.candidates[0].content.parts[0].functionCall.args.currencyName");
-//        String currencyData = ctx.read("$.candidates[0].content.parts[0].functionCall.args.currencyData");
-//        String name = ctx.read("$.candidates[0].content.parts[0].functionCall.name");
-//
-//        //Print the extracted values
-//        FunctionResponse res = new FunctionResponse();
-//        res.setCurrencyName(currencyName);
-//        res.setCurrencyData(currencyData);
-//        res.setFunctionName(name);
         JSONObject jsonObject = new JSONObject(responseBody);
 
         //Extract the first candidate
@@ -319,21 +393,35 @@ public class ChatbotServiceImpl implements ChatbotService {
         JSONObject firstPart = parts.getJSONObject(0);
         JSONObject functionCall = firstPart.getJSONObject("functionCall");
 
-        String functionName = functionCall.getString("name");
+        /*String functionName = functionCall.getString("name");
         JSONObject args = functionCall.getJSONObject("args");
         String currencyName = args.getString("currencyName");
-        String currencyData = args.getString("currencyData");
+        String currencyData = args.getString("currencyData");*/
 
-        //Print or use the extracted values
-        System.out.println("FunctionName " + functionName);
-        System.out.println("Currency Name  " + currencyName);
-        System.out.println("Currency Data " + currencyData);
-
+        String functionName = functionCall.getString("name");
+        JSONObject args = functionCall.getJSONObject("args");
         FunctionResponse res = new FunctionResponse();
-        res.setCurrencyName(currencyName);
-        res.setCurrencyData(currencyData);
+        if ("getCoinDetails".equals(functionName)) {
+            String currencyName = args.getString("currencyName");
+            String currencyData = args.getString("currencyData");
+            res.setCurrencyName(currencyName);
+            res.setCurrencyData(currencyData);
+            System.out.println("FunctionName " + functionName);
+            System.out.println("Currency Name  " + currencyName);
+            System.out.println("Currency Data " + currencyData);
+        } else if ("simpleChat".equals(functionName)) {
+            String text = args.getString("text");
+            res.setText(text);
+            System.out.println("FunctionName " + functionName);
+        }
+
         res.setFunctionName(functionName);
 
+        //Print or use the extracted values
+
+        // res.setCurrencyName(currencyName);
+        //  res.setCurrencyData(currencyData);
+        //  res.setFunctionName(functionName);
         return res;
 
     }
