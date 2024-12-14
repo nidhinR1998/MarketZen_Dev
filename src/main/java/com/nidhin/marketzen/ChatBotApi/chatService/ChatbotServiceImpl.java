@@ -67,14 +67,7 @@ public class ChatbotServiceImpl implements ChatbotService {
 
                 return response;
 
-            } /*else {
-                String response_chat=simpleChat(prompt);
-                System.out.println("Raw Response: " + response_chat);
-                response.setMessage(response_chat);
-                return response;
-            }*/
-
-            else {
+            } else {
                 String responseChat = simpleChat(prompt);
 
                 try {
@@ -304,7 +297,7 @@ public class ChatbotServiceImpl implements ChatbotService {
                                 .put("functionDeclarations", new JSONArray()
                                         .put(new JSONObject()
                                                 .put("name", "getCoinDetails")
-                                                .put("description", "Get the coin details from given currency object")
+                                                .put("description", "Get the Crypto coin details from given coin object")
                                                 .put("parameters", new JSONObject()
                                                         .put("type", "OBJECT")
                                                         .put("properties", new JSONObject()
