@@ -1,8 +1,8 @@
-package com.nidhin.marketzen.controller;
+package com.nidhin.marketzen.NewsApi.Controller;
 
 import com.nidhin.marketzen.models.User;
 import com.nidhin.marketzen.response.NewsResponse;
-import com.nidhin.marketzen.services.NewsService;
+import com.nidhin.marketzen.NewsApi.Service.NewsService;
 import com.nidhin.marketzen.services.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping ("/api/news")
+@RequestMapping("/api/news")
 public class NewsController {
     private static final Logger logger = LoggerFactory.getLogger(NewsController.class);
 
@@ -29,9 +29,9 @@ public class NewsController {
     public ResponseEntity<NewsResponse> getUserBusinessNews(
             @RequestHeader("Authorization") String jwt
     ) throws Exception {
-        User user=userService.findUserProfileByJwt(jwt);
+        User user = userService.findUserProfileByJwt(jwt);
         logger.info("New Controller HIT 1");
-        if (user!= null){
+        if (user != null) {
             NewsResponse response = newsService.fetchLatestBusinessNews();
             return new ResponseEntity<>(response, HttpStatus.CREATED);
         }
@@ -43,10 +43,38 @@ public class NewsController {
     public ResponseEntity<NewsResponse> getUserCryptoNews(
             @RequestHeader("Authorization") String jwt
     ) throws Exception {
-        User user=userService.findUserProfileByJwt(jwt);
+        User user = userService.findUserProfileByJwt(jwt);
         logger.info("New Controller HIT 2");
-        if (user!= null){
+        if (user != null) {
             NewsResponse response = newsService.fetchLatestCryptoNews();
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
+        }
+        logger.error("Invalid JWT: {}", jwt);
+        throw new Exception("Invalid JWT");
+    }
+
+    @GetMapping("/sportsNews")
+    public ResponseEntity<NewsResponse> getUserSportsNews(
+            @RequestHeader("Authorization") String jwt
+    ) throws Exception {
+        User user = userService.findUserProfileByJwt(jwt);
+        logger.info("New Controller HIT 2");
+        if (user != null) {
+            NewsResponse response = newsService.fetchLatestSportsNews();
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
+        }
+        logger.error("Invalid JWT: {}", jwt);
+        throw new Exception("Invalid JWT");
+    }
+
+    @GetMapping("/politicalNews")
+    public ResponseEntity<NewsResponse> getUserPoliticsNews(
+            @RequestHeader("Authorization") String jwt
+    ) throws Exception {
+        User user = userService.findUserProfileByJwt(jwt);
+        logger.info("New Controller HIT 2");
+        if (user != null) {
+            NewsResponse response = newsService.fetchLatestPoliticalNews();
             return new ResponseEntity<>(response, HttpStatus.CREATED);
         }
         logger.error("Invalid JWT: {}", jwt);
