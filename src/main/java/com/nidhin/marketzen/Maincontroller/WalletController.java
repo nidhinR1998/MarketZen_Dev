@@ -1,8 +1,7 @@
-package com.nidhin.marketzen.controller;
+package com.nidhin.marketzen.Maincontroller;
 
 import com.nidhin.marketzen.domain.WalletTransactionType;
 import com.nidhin.marketzen.models.*;
-import com.nidhin.marketzen.response.PaymentResponse;
 import com.nidhin.marketzen.services.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

@@ -1,4 +1,4 @@
-package com.nidhin.marketzen.controller;
+package com.nidhin.marketzen.Maincontroller;
 
 import com.nidhin.marketzen.models.Asset;
 import com.nidhin.marketzen.models.User;

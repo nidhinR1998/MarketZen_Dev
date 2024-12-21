@@ -1,4 +1,4 @@
-package com.nidhin.marketzen.controller;
+package com.nidhin.marketzen.Maincontroller;
 
 import com.nidhin.marketzen.domain.PaymentMethod;
 import com.nidhin.marketzen.models.PaymentOrder;
@@ -7,7 +7,6 @@ import com.nidhin.marketzen.response.PaymentResponse;
 import com.nidhin.marketzen.services.PaymentService;
 import com.nidhin.marketzen.services.UserService;
 import com.razorpay.RazorpayException;
-import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

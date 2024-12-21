@@ -1,4 +1,4 @@
-package com.nidhin.marketzen.controller;
+package com.nidhin.marketzen.Maincontroller;
 
 import com.nidhin.marketzen.domain.VerificationType;
 import com.nidhin.marketzen.models.ForgotPasswordToken;
@@ -13,14 +13,11 @@ import com.nidhin.marketzen.services.ForgotPasswordService;
 import com.nidhin.marketzen.services.UserService;
 import com.nidhin.marketzen.services.VerificationCodeService;
 import com.nidhin.marketzen.utils.OtpUtils;
-import org.apache.catalina.webresources.AbstractResource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.util.Optionals;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Optional;
 import java.util.UUID;
 
 @RestController

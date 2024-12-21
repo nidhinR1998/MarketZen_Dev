@@ -1,4 +1,4 @@
-package com.nidhin.marketzen.controller;
+package com.nidhin.marketzen.Maincontroller;
 
 import com.nidhin.marketzen.domain.OrderType;
 import com.nidhin.marketzen.models.Coin;
@@ -8,7 +8,6 @@ import com.nidhin.marketzen.requests.CreateOrderRequest;
 import com.nidhin.marketzen.services.CoinService;
 import com.nidhin.marketzen.services.OrderService;
 import com.nidhin.marketzen.services.UserService;
-import jakarta.persistence.GeneratedValue;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

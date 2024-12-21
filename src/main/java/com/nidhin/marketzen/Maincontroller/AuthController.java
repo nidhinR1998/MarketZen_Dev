@@ -1,4 +1,4 @@
-package com.nidhin.marketzen.controller;
+package com.nidhin.marketzen.Maincontroller;
 
 import com.nidhin.marketzen.config.Jwtprovider;
 import com.nidhin.marketzen.models.TwoFactorOTP;
@@ -8,7 +8,6 @@ import com.nidhin.marketzen.response.AuthResponse;
 import com.nidhin.marketzen.services.*;
 import com.nidhin.marketzen.utils.CryptoUtils;
 import com.nidhin.marketzen.utils.OtpUtils;
-import io.jsonwebtoken.JwtParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,7 +56,6 @@ public class AuthController {
             logger.error("Email already exists: {}", user.getEmail());
             throw new Exception("Email Already Exist");
         }
-
         User newUser = new User();
         newUser.setEmail(user.getEmail());
         newUser.setPassword(user.getPassword());
@@ -76,7 +74,6 @@ public class AuthController {
         res.setJwt(jwt);
         res.setStatus(true);
         res.setMessage("Register success");
-
         logger.info("User registered successfully: {}", user.getEmail());
         return new ResponseEntity<>(res, HttpStatus.CREATED);
     }
@@ -162,6 +159,7 @@ public class AuthController {
         logger.error("Invalid OTP for id: {}", id);
         throw new Exception("Invalid OTP");
     }
+
 
     @PostMapping("/forgot-password")
     public ResponseEntity<AuthResponse> forgotPasswordSendOtp(@RequestBody User user) throws Exception {

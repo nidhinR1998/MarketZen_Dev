@@ -1,4 +1,4 @@
-package com.nidhin.marketzen.controller;
+package com.nidhin.marketzen.Maincontroller;
 
 import com.nidhin.marketzen.domain.WalletTransactionType;
 import com.nidhin.marketzen.models.User;
@@ -11,7 +11,6 @@ import com.nidhin.marketzen.services.WalletService;
 import com.nidhin.marketzen.services.WithdrawalService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

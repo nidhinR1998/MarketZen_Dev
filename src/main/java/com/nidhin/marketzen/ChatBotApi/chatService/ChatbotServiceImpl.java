@@ -294,7 +294,9 @@ public class ChatbotServiceImpl implements ChatbotService {
                 )
                 .put("tools", new JSONArray()
                         .put(new JSONObject()
+
                                 .put("functionDeclarations", new JSONArray()
+
                                         .put(new JSONObject()
                                                 .put("name", "getCoinDetails")
                                                 .put("description", "Get the Crypto coin details from given coin object")
@@ -384,14 +386,17 @@ public class ChatbotServiceImpl implements ChatbotService {
         JSONObject content = firstCandidate.getJSONObject("content");
         JSONArray parts = content.getJSONArray("parts");
         JSONObject firstPart = parts.getJSONObject(0);
-        JSONObject functionCall = firstPart.getJSONObject("functionCall");
+       // JSONObject functionCall = firstPart.getJSONObject("functionCall");
 
-        /*String functionName = functionCall.getString("name");
-        JSONObject args = functionCall.getJSONObject("args");
-        String currencyName = args.getString("currencyName");
-        String currencyData = args.getString("currencyData");*/
-
-        String functionName = functionCall.getString("name");
+        String functionName = "simpleChat"; // Default to "simpleChat"
+        // Check if the functionCall object exists
+        JSONObject functionCall = null;
+        if (firstPart.has("functionCall")) {
+            functionCall = firstPart.getJSONObject("functionCall");
+            if (functionCall.has("name") && !functionCall.getString("name").isBlank()) {
+                functionName = functionCall.getString("name");
+            }
+        }
         JSONObject args = functionCall.getJSONObject("args");
         FunctionResponse res = new FunctionResponse();
         if ("getCoinDetails".equals(functionName)) {

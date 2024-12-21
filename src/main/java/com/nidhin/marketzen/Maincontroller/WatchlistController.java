@@ -1,4 +1,4 @@
-package com.nidhin.marketzen.controller;
+package com.nidhin.marketzen.Maincontroller;
 
 import com.nidhin.marketzen.models.Coin;
 import com.nidhin.marketzen.models.User;
@@ -6,7 +6,6 @@ import com.nidhin.marketzen.models.Watchlist;
 import com.nidhin.marketzen.services.CoinService;
 import com.nidhin.marketzen.services.UserService;
 import com.nidhin.marketzen.services.WatchlistService;
-import jakarta.persistence.Access;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
